@@ -2,19 +2,19 @@ pragma solidity =0.6.6;
 
 import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 
-import './interfaces/ISaitaMaskMigrator.sol';
+import './interfaces/ISaitaSwapMigrator.sol';
 import './interfaces/V1/IUniswapV1Factory.sol';
 import './interfaces/V1/IUniswapV1Exchange.sol';
-import './interfaces/ISaitaMaskRouter01.sol';
+import './interfaces/ISaitaSwapRouter01.sol';
 import './interfaces/IERC20.sol';
 
-contract SaitaMaskMigrator is ISaitaMaskMigrator {
+contract SaitaSwapMigrator is ISaitaSwapMigrator {
     IUniswapV1Factory immutable factoryV1;
-    ISaitaMaskRouter01 immutable router;
+    ISaitaSwapRouter01 immutable router;
 
     constructor(address _factoryV1, address _router) public {
         factoryV1 = IUniswapV1Factory(_factoryV1);
-        router = ISaitaMaskRouter01(_router);
+        router = ISaitaSwapRouter01(_router);
     }
 
     // needs to accept ETH from any v1 exchange and the router. ideally this could be enforced, as in the router,

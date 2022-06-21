@@ -1,19 +1,19 @@
 pragma solidity =0.6.6;
 
-import './interfaces/ISaitaMaskFactory.sol';
+import './interfaces/ISaitaSwapFactory.sol';
 import '@uniswap/lib/contracts/libraries/TransferHelper.sol';
 
-import './libraries/SaitaMaskLibrary.sol';
-import './interfaces/ISaitaMaskRouter01.sol';
+import './libraries/SaitaSwapLibrary.sol';
+import './interfaces/ISaitaSwapRouter01.sol';
 import './interfaces/IERC20.sol';
 import './interfaces/IWETH.sol';
 
-contract SaitaMaskRouter01 is ISaitaMaskRouter01 {
+contract SaitaSwapRouter01 is ISaitaSwapRouter01 {
     address public immutable override factory;
     address public immutable override WETH;
 
     modifier ensure(uint deadline) {
-        require(deadline >= block.timestamp, 'SaitaMaskRouter: EXPIRED');
+        require(deadline >= block.timestamp, 'SaitaSwapRouter: EXPIRED');
         _;
     }
 
@@ -36,21 +36,21 @@ contract SaitaMaskRouter01 is ISaitaMaskRouter01 {
         uint amountBMin
     ) private returns (uint amountA, uint amountB) {
         // create the pair if it doesn't exist yet
-        if (ISaitaMaskFactory(factory).getPair(tokenA, tokenB) == address(0)) {
-            ISaitaMaskFactory(factory).createPair(tokenA, tokenB);
+        if (ISaitaSwapFactory(factory).getPair(tokenA, tokenB) == address(0)) {
+            ISaitaSwapFactory(factory).createPair(tokenA, tokenB);
         }
-        (uint reserveA, uint reserveB) = SaitaMaskLibrary.getReserves(factory, tokenA, tokenB);
+        (uint reserveA, uint reserveB) = SaitaSwapLibrary.getReserves(factory, tokenA, tokenB);
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
-            uint amountBOptimal = SaitaMaskLibrary.quote(amountADesired, reserveA, reserveB);
+            uint amountBOptimal = SaitaSwapLibrary.quote(amountADesired, reserveA, reserveB);
             if (amountBOptimal <= amountBDesired) {
-                require(amountBOptimal >= amountBMin, 'SaitaMaskRouter: INSUFFICIENT_B_AMOUNT');
+                require(amountBOptimal >= amountBMin, 'SaitaSwapRouter: INSUFFICIENT_B_AMOUNT');
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
-                uint amountAOptimal = SaitaMaskLibrary.quote(amountBDesired, reserveB, reserveA);
+                uint amountAOptimal = SaitaSwapLibrary.quote(amountBDesired, reserveB, reserveA);
                 assert(amountAOptimal <= amountADesired);
-                require(amountAOptimal >= amountAMin, 'SaitaMaskRouter: INSUFFICIENT_A_AMOUNT');
+                require(amountAOptimal >= amountAMin, 'SaitaSwapRouter: INSUFFICIENT_A_AMOUNT');
                 (amountA, amountB) = (amountAOptimal, amountBDesired);
             }
         }
@@ -66,10 +66,10 @@ contract SaitaMaskRouter01 is ISaitaMaskRouter01 {
         uint deadline
     ) external override ensure(deadline) returns (uint amountA, uint amountB, uint liquidity) {
         (amountA, amountB) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin);
-        address pair = SaitaMaskLibrary.pairFor(factory, tokenA, tokenB);
+        address pair = SaitaSwapLibrary.pairFor(factory, tokenA, tokenB);
         TransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
         TransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
-        liquidity = ISaitaMaskPair(pair).mint(to);
+        liquidity = ISaitaSwapPair(pair).mint(to);
     }
     function addLiquidityETH(
         address token,
@@ -87,11 +87,11 @@ contract SaitaMaskRouter01 is ISaitaMaskRouter01 {
             amountTokenMin,
             amountETHMin
         );
-        address pair = SaitaMaskLibrary.pairFor(factory, token, WETH);
+        address pair = SaitaSwapLibrary.pairFor(factory, token, WETH);
         TransferHelper.safeTransferFrom(token, msg.sender, pair, amountToken);
         IWETH(WETH).deposit{value: amountETH}();
         assert(IWETH(WETH).transfer(pair, amountETH));
-        liquidity = ISaitaMaskPair(pair).mint(to);
+        liquidity = ISaitaSwapPair(pair).mint(to);
         if (msg.value > amountETH) TransferHelper.safeTransferETH(msg.sender, msg.value - amountETH); // refund dust eth, if any
     }
 
@@ -105,13 +105,13 @@ contract SaitaMaskRouter01 is ISaitaMaskRouter01 {
         address to,
         uint deadline
     ) public override ensure(deadline) returns (uint amountA, uint amountB) {
-        address pair = SaitaMaskLibrary.pairFor(factory, tokenA, tokenB);
-        ISaitaMaskPair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
-        (uint amount0, uint amount1) = ISaitaMaskPair(pair).burn(to);
-        (address token0,) = SaitaMaskLibrary.sortTokens(tokenA, tokenB);
+        address pair = SaitaSwapLibrary.pairFor(factory, tokenA, tokenB);
+        ISaitaSwapPair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
+        (uint amount0, uint amount1) = ISaitaSwapPair(pair).burn(to);
+        (address token0,) = SaitaSwapLibrary.sortTokens(tokenA, tokenB);
         (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
-        require(amountA >= amountAMin, 'SaitaMaskRouter: INSUFFICIENT_A_AMOUNT');
-        require(amountB >= amountBMin, 'SaitaMaskRouter: INSUFFICIENT_B_AMOUNT');
+        require(amountA >= amountAMin, 'SaitaSwapRouter: INSUFFICIENT_A_AMOUNT');
+        require(amountB >= amountBMin, 'SaitaSwapRouter: INSUFFICIENT_B_AMOUNT');
     }
     function removeLiquidityETH(
         address token,
@@ -144,9 +144,9 @@ contract SaitaMaskRouter01 is ISaitaMaskRouter01 {
         uint deadline,
         bool approveMax, uint8 v, bytes32 r, bytes32 s
     ) external override returns (uint amountA, uint amountB) {
-        address pair = SaitaMaskLibrary.pairFor(factory, tokenA, tokenB);
+        address pair = SaitaSwapLibrary.pairFor(factory, tokenA, tokenB);
         uint value = approveMax ? uint(-1) : liquidity;
-        ISaitaMaskPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
+        ISaitaSwapPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
         (amountA, amountB) = removeLiquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline);
     }
     function removeLiquidityETHWithPermit(
@@ -158,9 +158,9 @@ contract SaitaMaskRouter01 is ISaitaMaskRouter01 {
         uint deadline,
         bool approveMax, uint8 v, bytes32 r, bytes32 s
     ) external override returns (uint amountToken, uint amountETH) {
-        address pair = SaitaMaskLibrary.pairFor(factory, token, WETH);
+        address pair = SaitaSwapLibrary.pairFor(factory, token, WETH);
         uint value = approveMax ? uint(-1) : liquidity;
-        ISaitaMaskPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
+        ISaitaSwapPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
         (amountToken, amountETH) = removeLiquidityETH(token, liquidity, amountTokenMin, amountETHMin, to, deadline);
     }
 
@@ -169,11 +169,11 @@ contract SaitaMaskRouter01 is ISaitaMaskRouter01 {
     function _swap(uint[] memory amounts, address[] memory path, address _to) private {
         for (uint i; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
-            (address token0,) = SaitaMaskLibrary.sortTokens(input, output);
+            (address token0,) = SaitaSwapLibrary.sortTokens(input, output);
             uint amountOut = amounts[i + 1];
             (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
-            address to = i < path.length - 2 ? SaitaMaskLibrary.pairFor(factory, output, path[i + 2]) : _to;
-            ISaitaMaskPair(SaitaMaskLibrary.pairFor(factory, input, output)).swap(amount0Out, amount1Out, to, new bytes(0));
+            address to = i < path.length - 2 ? SaitaSwapLibrary.pairFor(factory, output, path[i + 2]) : _to;
+            ISaitaSwapPair(SaitaSwapLibrary.pairFor(factory, input, output)).swap(amount0Out, amount1Out, to, new bytes(0));
         }
     }
     function swapExactTokensForTokens(
@@ -183,9 +183,9 @@ contract SaitaMaskRouter01 is ISaitaMaskRouter01 {
         address to,
         uint deadline
     ) external override ensure(deadline) returns (uint[] memory amounts) {
-        amounts = SaitaMaskLibrary.getAmountsOut(factory, amountIn, path);
-        require(amounts[amounts.length - 1] >= amountOutMin, 'SaitaMaskRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(path[0], msg.sender, SaitaMaskLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
+        amounts = SaitaSwapLibrary.getAmountsOut(factory, amountIn, path);
+        require(amounts[amounts.length - 1] >= amountOutMin, 'SaitaSwapRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+        TransferHelper.safeTransferFrom(path[0], msg.sender, SaitaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
         _swap(amounts, path, to);
     }
     function swapTokensForExactTokens(
@@ -195,9 +195,9 @@ contract SaitaMaskRouter01 is ISaitaMaskRouter01 {
         address to,
         uint deadline
     ) external override ensure(deadline) returns (uint[] memory amounts) {
-        amounts = SaitaMaskLibrary.getAmountsIn(factory, amountOut, path);
-        require(amounts[0] <= amountInMax, 'SaitaMaskRouter: EXCESSIVE_INPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(path[0], msg.sender, SaitaMaskLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
+        amounts = SaitaSwapLibrary.getAmountsIn(factory, amountOut, path);
+        require(amounts[0] <= amountInMax, 'SaitaSwapRouter: EXCESSIVE_INPUT_AMOUNT');
+        TransferHelper.safeTransferFrom(path[0], msg.sender, SaitaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
         _swap(amounts, path, to);
     }
     function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline)
@@ -207,11 +207,11 @@ contract SaitaMaskRouter01 is ISaitaMaskRouter01 {
         ensure(deadline)
         returns (uint[] memory amounts)
     {
-        require(path[0] == WETH, 'SaitaMaskRouter: INVALID_PATH');
-        amounts = SaitaMaskLibrary.getAmountsOut(factory, msg.value, path);
-        require(amounts[amounts.length - 1] >= amountOutMin, 'SaitaMaskRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(path[0] == WETH, 'SaitaSwapRouter: INVALID_PATH');
+        amounts = SaitaSwapLibrary.getAmountsOut(factory, msg.value, path);
+        require(amounts[amounts.length - 1] >= amountOutMin, 'SaitaSwapRouter: INSUFFICIENT_OUTPUT_AMOUNT');
         IWETH(WETH).deposit{value: amounts[0]}();
-        assert(IWETH(WETH).transfer(SaitaMaskLibrary.pairFor(factory, path[0], path[1]), amounts[0]));
+        assert(IWETH(WETH).transfer(SaitaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]));
         _swap(amounts, path, to);
     }
     function swapTokensForExactETH(uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
@@ -220,10 +220,10 @@ contract SaitaMaskRouter01 is ISaitaMaskRouter01 {
         ensure(deadline)
         returns (uint[] memory amounts)
     {
-        require(path[path.length - 1] == WETH, 'SaitaMaskRouter: INVALID_PATH');
-        amounts = SaitaMaskLibrary.getAmountsIn(factory, amountOut, path);
-        require(amounts[0] <= amountInMax, 'SaitaMaskRouter: EXCESSIVE_INPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(path[0], msg.sender, SaitaMaskLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
+        require(path[path.length - 1] == WETH, 'SaitaSwapRouter: INVALID_PATH');
+        amounts = SaitaSwapLibrary.getAmountsIn(factory, amountOut, path);
+        require(amounts[0] <= amountInMax, 'SaitaSwapRouter: EXCESSIVE_INPUT_AMOUNT');
+        TransferHelper.safeTransferFrom(path[0], msg.sender, SaitaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
         _swap(amounts, path, address(this));
         IWETH(WETH).withdraw(amounts[amounts.length - 1]);
         TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
@@ -234,10 +234,10 @@ contract SaitaMaskRouter01 is ISaitaMaskRouter01 {
         ensure(deadline)
         returns (uint[] memory amounts)
     {
-        require(path[path.length - 1] == WETH, 'SaitaMaskRouter: INVALID_PATH');
-        amounts = SaitaMaskLibrary.getAmountsOut(factory, amountIn, path);
-        require(amounts[amounts.length - 1] >= amountOutMin, 'SaitaMaskRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(path[0], msg.sender, SaitaMaskLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
+        require(path[path.length - 1] == WETH, 'SaitaSwapRouter: INVALID_PATH');
+        amounts = SaitaSwapLibrary.getAmountsOut(factory, amountIn, path);
+        require(amounts[amounts.length - 1] >= amountOutMin, 'SaitaSwapRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+        TransferHelper.safeTransferFrom(path[0], msg.sender, SaitaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]);
         _swap(amounts, path, address(this));
         IWETH(WETH).withdraw(amounts[amounts.length - 1]);
         TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
@@ -249,32 +249,32 @@ contract SaitaMaskRouter01 is ISaitaMaskRouter01 {
         ensure(deadline)
         returns (uint[] memory amounts)
     {
-        require(path[0] == WETH, 'SaitaMaskRouter: INVALID_PATH');
-        amounts = SaitaMaskLibrary.getAmountsIn(factory, amountOut, path);
-        require(amounts[0] <= msg.value, 'SaitaMaskRouter: EXCESSIVE_INPUT_AMOUNT');
+        require(path[0] == WETH, 'SaitaSwapRouter: INVALID_PATH');
+        amounts = SaitaSwapLibrary.getAmountsIn(factory, amountOut, path);
+        require(amounts[0] <= msg.value, 'SaitaSwapRouter: EXCESSIVE_INPUT_AMOUNT');
         IWETH(WETH).deposit{value: amounts[0]}();
-        assert(IWETH(WETH).transfer(SaitaMaskLibrary.pairFor(factory, path[0], path[1]), amounts[0]));
+        assert(IWETH(WETH).transfer(SaitaSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]));
         _swap(amounts, path, to);
         if (msg.value > amounts[0]) TransferHelper.safeTransferETH(msg.sender, msg.value - amounts[0]); // refund dust eth, if any
     }
 
     function quote(uint amountA, uint reserveA, uint reserveB) public pure override returns (uint amountB) {
-        return SaitaMaskLibrary.quote(amountA, reserveA, reserveB);
+        return SaitaSwapLibrary.quote(amountA, reserveA, reserveB);
     }
 
     function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) public pure override returns (uint amountOut) {
-        return SaitaMaskLibrary.getAmountOut(amountIn, reserveIn, reserveOut);
+        return SaitaSwapLibrary.getAmountOut(amountIn, reserveIn, reserveOut);
     }
 
     function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) public pure override returns (uint amountIn) {
-        return SaitaMaskLibrary.getAmountOut(amountOut, reserveIn, reserveOut);
+        return SaitaSwapLibrary.getAmountOut(amountOut, reserveIn, reserveOut);
     }
 
     function getAmountsOut(uint amountIn, address[] memory path) public view override returns (uint[] memory amounts) {
-        return SaitaMaskLibrary.getAmountsOut(factory, amountIn, path);
+        return SaitaSwapLibrary.getAmountsOut(factory, amountIn, path);
     }
 
     function getAmountsIn(uint amountOut, address[] memory path) public view override returns (uint[] memory amounts) {
-        return SaitaMaskLibrary.getAmountsIn(factory, amountOut, path);
+        return SaitaSwapLibrary.getAmountsIn(factory, amountOut, path);
     }
 }

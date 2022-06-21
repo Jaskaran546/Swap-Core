@@ -1,8 +1,8 @@
 pragma solidity >=0.6.2;
 
-import './ISaitaMaskRouter01.sol';
+import './ISaitaSwapRouter01.sol';
 
-interface ISaitaMaskRouter02 is ISaitaMaskRouter01 {
+interface ISaitaSwapRouter02 is ISaitaSwapRouter01 {
     function removeLiquidityETHSupportingFeeOnTransferTokens(
         address token,
         uint liquidity,
