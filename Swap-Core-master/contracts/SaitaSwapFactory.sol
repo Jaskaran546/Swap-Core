@@ -13,8 +13,8 @@ contract SaitaSwapFactory is ISaitaSwapFactory {
     address[] public allPairs;
 
     event PairCreated(address indexed token0, address indexed token1, address pair, uint);
-    event setFeeTo(address _feeTo);
-    event setFeeToSetter(address _feeToSetter);
+    event SetFeeTo(address _feeTo);
+    event SetFeeToSetter(address _feeToSetter);
 
     constructor(address _feeToSetter) public {
         feeToSetter = _feeToSetter;
@@ -41,15 +41,15 @@ contract SaitaSwapFactory is ISaitaSwapFactory {
         emit PairCreated(token0, token1, pair, allPairs.length);
     }
 
-    function SetFeeTo(address _feeTo) external {
+    function setFeeTo(address _feeTo) external {
         require(msg.sender == feeToSetter, "SaitaSwap: FORBIDDEN");
         feeTo = _feeTo;
-        emit setFeeTo(_feeTo);
+        emit SetFeeTo(_feeTo);
     }
 
-    function SetFeeToSetter(address _feeToSetter) external {
+    function setFeeToSetter(address _feeToSetter) external {
         require(msg.sender == feeToSetter, "SaitaSwap: FORBIDDEN");
         feeToSetter = _feeToSetter;
-        emit setFeeToSetter(_feeToSetter);
+        emit SetFeeToSetter(_feeToSetter);
     }
 }
