@@ -82,7 +82,24 @@ contract SaitaSwapERC20 is ISaitaSwapERC20 {
         _approve(msg.sender, spender, value);
         return true;
     }
+    
+      function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+        address owner = _msgSender();
+        _approve(owner, spender, allowance(owner, spender) + addedValue);
+        return true;
+    }
+    
+     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+        address owner = _msgSender();
+        uint256 currentAllowance = allowance(owner, spender);
+        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
+        unchecked {
+            _approve(owner, spender, currentAllowance - subtractedValue);
+        }
 
+        return true;
+    }
+  
     function transfer(address to, uint value) external returns (bool) {
         _transfer(msg.sender, to, value);
         return true;
